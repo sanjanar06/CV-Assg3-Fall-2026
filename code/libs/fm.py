@@ -86,7 +86,29 @@ class FM(nn.Module):
         """
         Fill in the missing code here. See Rectified Flow paper.
         """
+        batch_size = x_start.shape[0]
 
+        # z: pure random static, same shape as the real images
+        if noise is None:
+            noise = torch.randn_like(x_start)
+
+        # t: a random point on the noise -> image line, uniform in [0, 1]
+        # (0 = all noise, 1 = clean image); one t per image in the batch
+        t = torch.rand(batch_size, device=x_start.device)
+        # reshape to (B, 1, 1, 1) so it multiplies every pixel of its image
+        t_ = t.view(batch_size, *([1] * (x_start.dim() - 1)))
+
+        # Eq. (1): x_t = (1 - t) * z + t * x_data  (a blend of noise and image)
+        x_t = (1.0 - t_) * noise + t_ * x_start
+
+        # Eq. (2): the true velocity along the straight path is x_data - z
+        target = x_start - noise
+
+        # network's guess of the velocity, given the blend, class label and time
+        pred = self.model(x_t, label, t)
+
+        # Eq. (3): mean squared error between the guess and the true velocity
+        loss = F.mse_loss(pred, target)
         return loss
 
     @torch.no_grad()
@@ -110,6 +132,17 @@ class FM(nn.Module):
         """
         Fill in the missing code here. See Rectified Flow paper.
         """
+        # Eq. (5), forward Euler: walk from t = 0 (noise) to t = 1 (image)
+        # in self.timesteps equal steps of size self.dt
+        # (classifier-free guidance, the bonus, is not implemented yet)
+        for i in range(self.timesteps):
+            t = torch.full(
+                (len(labels),), i * self.dt, device=device, dtype=imgs.dtype
+            )
+            # which direction (and how fast) to move from here
+            velocity = self.model(imgs, labels, t)
+            # take one small step in that direction
+            imgs = imgs + self.dt * velocity
 
         # postprocessing the images
         imgs = self.postprocess(imgs)

@@ -198,5 +198,18 @@ class LightningDiT(nn.Module):
         """
         Fill in the missing code here. See details in DiT paper.
         """
+        # conditioning vector: time embedding + class embedding (DiT, Sec. 3.2)
+        c = t + y                                # (N, D)
+
+        # transformer blocks; each block uses c through adaLN-Zero
+        # (c predicts per-channel shift / scale / gate for its layers)
+        for block in self.blocks:
+            x = block(x, c)                      # (N, T, D)
+
+        # final layer: adaLN on c, then a linear map back to patch pixels
+        x = self.final_layer(x, c)               # (N, T, p * p * C)
+
+        # put the patches back together into an image
+        x = self.unpatchify(x)                   # (N, C, H, W)
 
         return x

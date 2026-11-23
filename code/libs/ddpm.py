@@ -172,6 +172,25 @@ class DDPM(nn.Module):
         Compute the simplified loss for training the model.
         Fill in the missing code here. Algorithm 1 line 5 in the paper.
         """
+        batch_size = x_start.shape[0]
+
+        # epsilon ~ N(0, I): the static we will add
+        if noise is None:
+            noise = torch.randn_like(x_start)
+
+        # t ~ Uniform({0, ..., T-1}): how much static, one step per image
+        t = torch.randint(
+            0, self.timesteps, (batch_size,), device=x_start.device
+        ).long()
+
+        # x_t: the image after t steps of noising (Eq. 4, already provided)
+        x_t = self.q_sample(x_start, t, noise=noise)
+
+        # network guesses which static was added
+        pred_noise = self.model(x_t, label, t)
+
+        # || epsilon - epsilon_theta(x_t, t) ||^2
+        loss = F.mse_loss(pred_noise, noise)
         return loss
 
     @torch.no_grad()
@@ -196,6 +215,24 @@ class DDPM(nn.Module):
         Fill in the missing code here. See Equation 11 in DDPM paper.
         See https://arxiv.org/pdf/2207.12598 for classifier free guidance (cfg)
         """
+        # network's guess of the static in x at step t
+        # (classifier-free guidance, the bonus, is not implemented yet)
+        pred_noise = self.model(x, label, t)
+
+        # Eq. 11: mean of x_{t-1}
+        # = 1/sqrt(alpha_t) * (x_t - beta_t / sqrt(1 - alpha_bar_t) * eps_theta)
+        model_mean = sqrt_recip_alphas_t * (
+            x - betas_t / sqrt_one_minus_alphas_cumprod_t * pred_noise
+        )
+
+        # last step (t = 0): return the clean estimate, no new static
+        if t_index == 0:
+            return model_mean
+
+        # otherwise add a little fresh static: sigma_t * z (Algorithm 2, line 4)
+        posterior_variance_t = self._extract(self.posterior_variance, t, x.shape)
+        z = torch.randn_like(x)
+        x = model_mean + torch.sqrt(posterior_variance_t) * z
         return x
 
     @torch.no_grad()
@@ -220,7 +257,14 @@ class DDPM(nn.Module):
         """
         Fill in the missing code here. See Algorithm 2 in DDPM paper.
         """
-        
+        # Algorithm 2: t = T-1, ..., 0 (most noisy -> clean)
+        for i in reversed(range(self.timesteps)):
+            t = torch.full((len(labels),), i, device=device, dtype=torch.long)
+            imgs = self.p_sample(
+                imgs, labels, t, i,
+                cfg=cfg, cfg_scale=cfg_scale, cfg_start_t=cfg_start_t,
+            )
+
         # postprocessing the images
         imgs = self.postprocess(imgs)
         return imgs

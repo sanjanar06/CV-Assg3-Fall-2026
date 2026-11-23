@@ -239,6 +239,19 @@ class UNet(nn.Module):
         (3) an upsampling module (if there is one)
         You can use the encoder part as a reference.
         """
+        # decoder: walk back up through the levels in reverse order
+        for resblock, transformer, upsample in self.decoder:
+            # skip connection: grab the matching encoder output (same size,
+            # last saved = deepest level first) and stack it on the channels
+            x = torch.cat([x, encoder_output.pop()], dim=1)
+            # (1) residual block, conditioned on the time embedding t
+            x = resblock(x, t)
+            # (2) transformer: cross-attention to the class embedding c
+            if transformer:
+                x = transformer(x, c)
+            # (3) grow the feature map back to the next (larger) size
+            if upsample:
+                x = upsample(x)
 
         x = self.final_layer(x)
         return x
