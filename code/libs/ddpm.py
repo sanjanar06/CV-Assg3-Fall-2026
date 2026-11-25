@@ -172,6 +172,12 @@ class DDPM(nn.Module):
         Compute the simplified loss for training the model.
         Fill in the missing code here. Algorithm 1 line 5 in the paper.
         """
+        # latent modeling: encode images in [0, 1] into TAESD latents
+        # (4 x H/8 x W/8, roughly unit variance); the encoder stays frozen
+        if self.use_vae:
+            with torch.no_grad():
+                x_start = self.vae.encode(x_start)
+
         batch_size = x_start.shape[0]
 
         # epsilon ~ N(0, I): the static we will add
@@ -264,6 +270,10 @@ class DDPM(nn.Module):
                 imgs, labels, t, i,
                 cfg=cfg, cfg_scale=cfg_scale, cfg_start_t=cfg_start_t,
             )
+
+        # latent modeling: decode generated latents back to images in [0, 1]
+        if self.use_vae:
+            imgs = self.vae.decode(imgs)
 
         # postprocessing the images
         imgs = self.postprocess(imgs)

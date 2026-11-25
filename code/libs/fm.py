@@ -86,6 +86,12 @@ class FM(nn.Module):
         """
         Fill in the missing code here. See Rectified Flow paper.
         """
+        # latent modeling: encode images in [0, 1] into TAESD latents
+        # (4 x H/8 x W/8, roughly unit variance); the encoder stays frozen
+        if self.use_vae:
+            with torch.no_grad():
+                x_start = self.vae.encode(x_start)
+
         batch_size = x_start.shape[0]
 
         # z: pure random static, same shape as the real images
@@ -143,6 +149,10 @@ class FM(nn.Module):
             velocity = self.model(imgs, labels, t)
             # take one small step in that direction
             imgs = imgs + self.dt * velocity
+
+        # latent modeling: decode generated latents back to images in [0, 1]
+        if self.use_vae:
+            imgs = self.vae.decode(imgs)
 
         # postprocessing the images
         imgs = self.postprocess(imgs)
