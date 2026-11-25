@@ -247,6 +247,10 @@ Everything else stays the same; the noise simply has the latent shape. We checke
 MiniImageNet images have a standard deviation of about 0.95, already close to the unit variance of the
 noise, so no extra scaling factor was needed. We also checked that no gradients reach the autoencoder.
 The decoder already outputs images in $[0,1]$, so post-processing only clamps the values.
+Only latent FM was trained on MiniImageNet, as required, but we also tested latent DDPM with a short
+training run: it trains and generates correctly sized $3\times128\times128$ images in $[0,1]$
+through the same encode and decode steps (using the quadratic noise schedule the supplied code selects
+for latent DDPM).
 
 \paragraph{How latent modeling differs from pixel space.} In pixel space the model must generate every
 one of the $3\times128\times128=49{,}152$ values, including fine details that matter little to how the
