@@ -1,3 +1,5 @@
+# mixed precision: uses the T4 tensor cores, ~2-3x faster than fp32
+dtype: "fp16"
 output_folder: "../logs"
 model_type: "DDPM"
 dataset:
