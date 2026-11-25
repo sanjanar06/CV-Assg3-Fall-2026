@@ -1,0 +1,21 @@
+2026-11-23 21:15:17 START mnist_fm_unet
+2026-11-23 21:15:17 START mnist_fm_vit
+2026-11-23 23:58:07 END   mnist_fm_vit (exit 0)
+2026-11-23 23:58:07 START mnist_ddpm_vit
+2026-11-24 00:11:30 END   mnist_fm_unet (exit 0)
+2026-11-24 00:11:30 START mnist_ddpm_unet
+2026-11-24 02:57:19 END   mnist_ddpm_vit (exit 0)
+2026-11-24 03:09:25 END   mnist_ddpm_unet (exit 0)
+2026-11-24 03:09:25 ALL DONE
+2026-11-24 03:09:38 digit runs finished, starting photo runs
+2026-11-24 03:09:38 START miniimagenet_fm_unet
+2026-11-24 03:09:38 START miniimagenet_fm_vit
+2026-11-24 08:36:33 END   miniimagenet_fm_unet (exit 0)
+2026-11-24 08:36:33 START eval miniimagenet_fm_unet
+2026-11-24 09:47:39 END   miniimagenet_fm_vit (exit 0)
+2026-11-24 09:47:39 START eval miniimagenet_fm_vit
+2026-11-24 09:49:43 END   eval miniimagenet_fm_unet (exit 0): FID:  117.10653558878641
+2026-11-24 10:05:51 END   eval miniimagenet_fm_vit (exit 0): FID:  115.4437506770575
+2026-11-24 10:05:51 PHOTO RUNS DONE
+2026-11-24 10:05:56 all queues finished, powering off in 5 minutes
+2026-11-24 10:10:56 POWER OFF
