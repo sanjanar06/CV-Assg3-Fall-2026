@@ -11,3 +11,12 @@ temp_submission/
 *.zip
 # personal editor settings
 .vscode/
+# LaTeX build files (report.pdf itself is kept)
+*.aux
+*.log
+!run_logs/*.log
+!results/*.log
+*.out
+*.synctex.gz
+*.fls
+*.fdb_latexmk
